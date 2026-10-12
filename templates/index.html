@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MFA | Gym Management System</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+</head>
+<body>
+  <section id="loginPage" class="login-page">
+    <div class="login-card">
+      <div class="brand large"><span>M</span> MFA</div>
+      <p class="brand-sub">METAL FITNESS ARENA</p>
+      <h1>Staff Login</h1>
+      <p class="muted">Gym Membership & Access Control</p>
+      <form id="loginForm">
+        <label>Username</label><input id="username" autocomplete="username" required>
+        <label>Password</label><input id="password" type="password" autocomplete="current-password" required>
+        <button class="primary full" type="submit">LOGIN</button>
+      </form>
+      <p class="login-note">First login: admin / password. Change the password before live use.</p>
+      <div id="loginError" class="form-error hidden"></div>
+    </div>
+  </section>
+
+  <div id="app" class="app hidden">
+    <aside class="sidebar">
+      <div class="side-brand"><div class="brand"><span>M</span> MFA</div><small>GYM MANAGEMENT</small></div>
+      <nav id="mainNav">
+        <button class="nav-item active" data-page="dashboard">⌂ <span>Dashboard</span></button>
+        <button class="nav-item" data-page="checkin">◉ <span>Check-in</span></button>
+        <button class="nav-item" data-page="members">♙ <span>Members</span></button>
+        <button class="nav-item" data-page="payments" data-roles="Administrator,Manager">₦ <span>Payments</span></button>
+        <button class="nav-item" data-page="packages" data-roles="Administrator,Manager">▦ <span>Packages</span></button>
+        <button class="nav-item" data-page="emails" data-roles="Administrator,Manager">✉ <span>Messaging</span></button>
+        <button class="nav-item" data-page="staff" data-roles="Administrator">♟ <span>Staff</span></button>
+        <button class="nav-item" data-page="activity" data-roles="Administrator,Manager">≡ <span>Activity Log</span></button>
+        <button class="nav-item" data-page="reports" data-roles="Administrator,Manager">▤ <span>Reports</span></button>
+      </nav>
+      <div class="side-bottom">
+        <div class="staff"><div id="staffAvatar" class="avatar">M</div><div><b id="staffName">Staff</b><small id="staffRole">Role</small></div></div>
+        <button id="changePasswordBtn" class="logout">🔒 <span>Change Password</span></button><button id="logoutBtn" class="logout">↪ <span>Logout</span></button>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div><span class="mobile-title">MFA</span><h2 id="pageTitle">Dashboard</h2><p id="pageSubtitle">Membership and access overview</p></div>
+        <div class="top-actions"><span id="clock"></span><div id="topAvatar" class="top-avatar">M</div></div>
+      </header>
+
+      <section id="dashboard" class="page active-page">
+        <div class="quick-check"><div><div class="eyebrow">FRONT DESK</div><h1>Ready for check-in?</h1><p>Scan a member QR code or enter their member ID.</p></div><button class="white-btn" data-goto="checkin">OPEN CHECK-IN</button></div>
+        <div class="stats">
+          <div class="stat"><span>Total members</span><strong id="totalMembers">0</strong><small>All registered members</small></div>
+          <div class="stat"><span>Active members</span><strong id="activeMembers">0</strong><small>Currently allowed in</small></div>
+          <div class="stat"><span>Checked in today</span><strong id="todayCount">0</strong><small>Successful entries</small></div>
+          <div class="stat"><span>Revenue this month</span><strong id="monthlyRevenue">₦0</strong><small>Recorded payments</small></div>
+          <div class="stat"><span>Expired</span><strong id="expiredMembers">0</strong><small>Need renewal</small></div>
+          <div class="stat"><span>New this month</span><strong id="newMembers">0</strong><small>Registrations</small></div>
+          <div class="stat"><span>Renewals this month</span><strong id="renewalsMonth">0</strong><small>Renewal transactions</small></div>
+          <div class="stat"><span>Expiring soon</span><strong id="expiringSoon">0</strong><small>Next 7 days</small></div>
+        </div>
+        <div class="grid-2">
+          <div class="panel"><div class="panel-head"><div><h3>Recent check-ins</h3><p>Latest successful entries</p></div><button class="link-btn" data-goto="checkin">Check-in</button></div><div id="recentCheckins" class="expiry-list"></div></div>
+          <div class="panel"><div class="panel-head"><div><h3>Expiring soon</h3><p>Members to remind</p></div><button class="link-btn" data-goto="emails">Email</button></div><div id="dashboardExpiring" class="expiry-list"></div></div>
+        </div>
+      </section>
+
+      <section id="checkin" class="page">
+        <div class="section-head"><div><h1>Member Check-in</h1><p>Scan the QR code or enter the member ID.</p></div></div>
+        <div class="checkin-layout">
+          <div class="panel check-box">
+            <div class="scan-icon">▣</div><h2>Scan QR Code</h2><p>Allow camera access, then hold the member's QR code in front of the camera.</p>
+            <button id="startScanner" class="primary">OPEN CAMERA SCANNER</button>
+            <div id="qr-reader" class="qr-reader hidden"></div>
+            <button id="stopScanner" class="secondary hidden">STOP CAMERA</button>
+            <div class="or">OR</div>
+            <label>Member ID / QR token</label>
+            <div class="search-row"><input id="memberId" placeholder="e.g. 001 or GM-XXXXXXXX"><button id="checkAccessBtn" class="primary">CHECK ACCESS</button></div>
+          </div>
+          <div id="accessResult" class="panel result-panel"><div class="result-icon">?</div><h2>Waiting for member</h2><p>The access decision will appear here.</p></div>
+        </div>
+      </section>
+
+      <section id="members" class="page">
+        <div class="section-head"><div><h1>Members</h1><p>Register, search and manage gym members.</p></div><button id="addMemberBtn" class="primary">+ ADD MEMBER</button></div>
+        <div class="toolbar"><input id="memberSearch" placeholder="Search name, ID, phone, email or QR code"></div>
+        <div class="panel table-panel"><table><thead><tr><th>Member</th><th>ID</th><th>Email</th><th>Package</th><th>Expiry</th><th>Status</th><th>Actions</th></tr></thead><tbody id="membersTable"></tbody></table></div>
+      </section>
+
+      <section id="payments" class="page">
+        <div class="section-head"><div><h1>Payments</h1><p>Membership payments recorded in the system.</p></div></div>
+        <div class="stats"><div class="stat"><span>Transactions shown</span><strong id="paymentCount">0</strong></div><div class="stat"><span>Revenue shown</span><strong id="paymentRevenue">₦0</strong></div></div>
+        <div class="panel table-panel"><table><thead><tr><th>Date</th><th>Member</th><th>Package</th><th>Type</th><th>Method</th><th>Amount</th><th>Staff</th></tr></thead><tbody id="paymentsTable"></tbody></table></div>
+      </section>
+
+      <section id="packages" class="page">
+        <div class="section-head"><div><h1>Membership Packages</h1><p>Manage prices and durations used at registration and renewal.</p></div><button id="addPackageBtn" class="primary">+ ADD PACKAGE</button></div>
+        <div id="packageGrid" class="package-grid"></div>
+      </section>
+
+      <section id="emails" class="page">
+        <div class="section-head"><div><h1>Bulk Messaging</h1><p>Send email, SMS or WhatsApp reminders and notices to selected members.</p></div><div id="emailStatus" class="status-pill">Checking messaging configuration…</div></div>
+        <div class="email-layout">
+          <div class="panel">
+            <div class="panel-head"><div><h3>Recipients</h3><p>Select members who should receive this message.</p></div><button id="refreshRecipients" class="link-btn">Refresh</button></div>
+            <div class="recipient-toolbar"><select id="recipientFilter"><option value="all">All members</option><option value="active">Active members</option><option value="expiring">Expiring within 7 days</option><option value="expired">Expired members</option></select><label><input id="selectAllRecipients" type="checkbox"> Select all</label></div>
+            <div id="recipientList" class="recipient-list"></div>
+          </div>
+          <div class="panel email-compose">
+            <h3>Compose message</h3><p class="muted">Use <code>{name}</code>, <code>{member_id}</code> and <code>{expiry_date}</code> for automatic personalization.</p>
+            <label>Delivery channel</label><select id="messageChannel"><option value="email">Email</option><option value="sms">SMS</option><option value="whatsapp">WhatsApp</option></select><p id="channelHelp" class="muted">Email requires valid member email addresses.</p>
+            <label>Message type</label><select id="emailType"><option>Reminder</option><option>Notice</option><option>Announcement</option><option>Other</option></select>
+            <div id="emailSubjectWrap"><label>Subject</label><input id="emailSubject" placeholder="e.g. MFA Membership Renewal Reminder"></div>
+            <label>Message</label><textarea id="emailBody" rows="13" placeholder="Dear {name},&#10;&#10;Your MFA membership is nearing expiry...&#10;&#10;Regards,&#10;Metal Fitness Arena"></textarea>
+            <div class="compose-actions"><span id="selectedCount">0 selected</span><button id="sendBulkEmail" class="primary">SEND MESSAGE</button></div>
+            <div id="emailResult" class="email-result hidden"></div>
+          </div>
+        </div>
+        <div class="panel table-panel email-history"><div class="panel-head"><div><h3>Email history</h3><p>Recent email delivery attempts.</p></div></div><table><thead><tr><th>Date</th><th>Recipient</th><th>Member</th><th>Type</th><th>Status</th><th>Subject</th></tr></thead><tbody id="emailHistoryTable"></tbody></table></div>
+        <div class="panel table-panel email-history" style="margin-top:20px"><div class="panel-head"><div><h3>SMS & WhatsApp history</h3><p>Provider acceptance and errors for recent message attempts.</p></div></div><table><thead><tr><th>Date</th><th>Channel</th><th>Recipient</th><th>Member</th><th>Status</th><th>Error / Provider ID</th></tr></thead><tbody id="messageHistoryTable"></tbody></table></div>
+      </section>
+
+      <section id="staff" class="page">
+        <div class="section-head"><div><h1>Staff Accounts</h1><p>Control who can access MFA and what they can do.</p></div><button id="addStaffBtn" class="primary">+ ADD STAFF</button></div>
+        <div class="panel table-panel"><table><thead><tr><th>Name</th><th>Username</th><th>Email</th><th>Role</th><th>Status</th><th>Created</th><th>Actions</th></tr></thead><tbody id="staffTable"></tbody></table></div>
+      </section>
+
+      <section id="activity" class="page"><div class="section-head"><div><h1>Activity Log</h1><p>Important actions performed by staff.</p></div></div><div class="panel table-panel"><table><thead><tr><th>Date</th><th>Staff</th><th>Action</th><th>Details</th></tr></thead><tbody id="activityTable"></tbody></table></div></section>
+
+      <section id="reports" class="page"><div class="section-head"><div><h1>Reports</h1><p>Download the current member report for Excel or record keeping.</p></div><a class="primary download-link" href="/api/report.csv">DOWNLOAD MEMBER REPORT</a></div><div class="panel"><h3>Report contents</h3><p class="muted">Member name, serial ID, phone, email, status, current package, expiry date and attendance count.</p></div></section>
+    </main>
+  </div>
+
+  <div id="modal" class="modal hidden"><div class="modal-card"><button id="closeModal" class="close">×</button><div id="modalContent"></div></div></div>
+
+  <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
